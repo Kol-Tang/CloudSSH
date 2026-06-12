@@ -241,7 +241,10 @@ function connect() {
   term.writeln('\\x1b[1;33m[*] Connecting to ' + user + '@' + host + ':' + port + '...\\x1b[0m');
   const wsUrl = 'wss://' + window.location.host + '/api/ssh?host=' + encodeURIComponent(host) + '&port=' + port + '&user=' + encodeURIComponent(user) + '&pass=' + encodeURIComponent(pass);
   ws = new WebSocket(wsUrl);
-  ws.onopen = () => { term.writeln('\\x1b[32m[+] SSH session established\\x1b[0m'); };
+  ws.onopen = () => { 
+    term.writeln('\\x1b[32m[+] SSH session established\\x1b[0m'); 
+    document.getElementById('term-status').innerHTML = '<div class="w-2 h-2 bg-[#4af626]"></div> Connected';
+  };
   ws.onmessage = (e) => {
     if (typeof e.data === 'string') {
       try { const m = JSON.parse(e.data); if (m.type === 'status') term.writeln('\\x1b[32m[*] ' + m.message + '\\x1b[0m'); else if (m.type === 'error') term.writeln('\\x1b[31m[!] ' + m.message + '\\x1b[0m'); } catch { term.write(e.data); }

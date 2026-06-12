@@ -141,6 +141,7 @@ export class SSHSession {
 
   private async handlePacket(packet: any): Promise<void> {
     const msgType = packet.payload[0];
+    console.log('Packet:', msgType, 'State:', this.state);
 
     switch (this.state) {
       case 'kex':
@@ -151,6 +152,7 @@ export class SSHSession {
         await this.handleAuthPacket(msgType, packet.payload);
         break;
 
+      case 'shell':
       case 'ready':
         await this.handleSessionPacket(msgType, packet.payload);
         break;
@@ -263,28 +265,28 @@ export class SSHSession {
   }
 
   private async openShell(): Promise<void> {
+    console.log('Opening shell session...');
     const openMsg = this.channel.buildOpenSession();
     await this.sendEncrypted(openMsg);
   }
 
   private async handleSessionPacket(msgType: number, payload: Uint8Array): Promise<void> {
+    console.log('Session packet:', msgType, 'state:', this.state);
     switch (msgType) {
       case SSH_MSG_CHANNEL_OPEN_CONFIRMATION:
+        console.log('Channel opened, sending PTY request');
         this.channel.handleOpenConfirmation(payload);
         const ptyReq = this.channel.buildPTYRequest(120, 40);
         await this.sendEncrypted(ptyReq);
         break;
 
       case SSH_MSG_CHANNEL_SUCCESS:
+        console.log('Channel success, state:', this.state);
         if (this.state === 'shell') {
+          console.log('Sending shell request');
           const shellReq = this.channel.buildShellRequest();
           await this.sendEncrypted(shellReq);
           this.state = 'ready';
-
-          this.ws.send(JSON.stringify({
-            type: 'status',
-            message: 'Shell 已就绪'
-          }));
         }
         break;
 
